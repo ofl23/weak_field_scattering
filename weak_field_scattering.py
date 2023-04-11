@@ -21,12 +21,38 @@ def scattering_angle_PM(m1, m2, E, J, PM_order=4):
     gamma = 1 + (-1 + pow(E,2)/pow(M,2))/(2.*nu)
     j = J/(m1*m2)
 
-    chi = 0
+    angle = 0
 
     for i in range(1,PM_order+1):
-        chi += scattering_angle_PM_contribution(nu, gamma, i) / pow(j,i)
+        angle += scattering_angle_PM_contribution(nu, gamma, i) / pow(j,i)
 
-    return 2 * chi
+    return 2 * angle
+
+
+def scattering_angle_PM_scL_resum(m1, m2, E, J, PM_order=4):
+    """
+    Function to return the scL resummed scattering angle at a given PM order
+    Formula from arXiv:2211.01399v2 (4.5)
+
+    m1, m2 = black hole masses 
+    E = centre of mass total energy
+    J = centre of mass angular momentum
+    """
+    if nu_gamma_PM_conditions(nu, gamma, PM_order):
+        return 0
+    
+    M = m1 + m2                                         # Sum of masses
+    nu = m1*m2 / pow(M,2)                               # Symmetric mass ratio
+
+    gamma = 1 + (-1 + pow(E,2)/pow(M,2))/(2.*nu)        # Relative Lorentz factor
+    j = J/(m1*m2)                                       # rescaled angular momentum
+
+    angle = 0
+
+    for i in range(1,PM_order+1):
+        angle += scattering_angle_PM_contribution_scL_resum(nu, gamma, i) / pow(j,i)
+
+    return 2 * scL(critical_rescaled_angular_momentum_PM(nu, gamma, PM_order) / j) * angle
 
 
 
@@ -57,6 +83,41 @@ def scattering_angle_PM_contribution(nu, gamma, PM_order):
 
         return chi_3
     
+
+
+def scattering_angle_PM_contribution_scL_resum(nu, gamma, PM_order):
+    """
+    Function to return the PM coefficient of the scattering angle at a given PM order for the resummed in scL
+    Expansion defined in arXiv:2211.01399v2 (4.6)
+    Defined as {\tilde chi_i} in arXiv:2211.01399v2 (4.7)
+
+    nu = m1 m2 / (m1 + m2)^2 = symmetric mass ratio 
+    gamma = relative Lorentz factor
+    """
+    if nu_gamma_PM_conditions(nu, gamma, PM_order):
+        return 0
+
+    if PM_order == 1:
+        return scattering_angle_PM_contribution(nu, gamma, 1)
+
+    if PM_order == 2:
+        chi_2 = - 0.5*critical_rescaled_angular_momentum_PM(nu, gamma, 2) * scattering_angle_PM_contribution(nu, gamma, 1)
+        return chi_2 + scattering_angle_PM_contribution(nu, gamma, 2)
+
+    if PM_order == 3:
+        j0 = critical_rescaled_angular_momentum_PM(nu, gamma, 3)
+
+        chi_3 = - pow(j0,2) / 12. * scattering_angle_PM_contribution(nu, gamma, 1)
+        chi_3 += - 0.5 * j0 * scattering_angle_PM_contribution(nu, gamma, 2)
+        return chi_3 + scattering_angle_PM_contribution(nu, gamma, 3)
+    
+    if PM_order == 4:
+        j0 = critical_rescaled_angular_momentum_PM(nu, gamma, 4)
+
+        chi_4 += - pow(j0,3) / 24. * scattering_angle_PM_contribution(nu, gamma, 1)
+        chi_4 += - pow(j0,2) / 12. * scattering_angle_PM_contribution(nu, gamma, 2)
+        chi_4 += - 0.5 * j0 * scattering_angle_PM_contribution(nu, gamma, 3)
+        return chi_4 + scattering_angle_PM_contribution(nu, gamma, 4)
 
 
 
@@ -129,6 +190,15 @@ def critical_rescaled_angular_momentum_PM(nu, gamma, PM_order):
 
 
 
+def scL(x):
+    """
+    Function to return the resum function scL
+    Formulae from arXiv:2211.01399v2 (4.3)
+    """
+
+    return 1/x * np.log(1/(1-x))
+
+
 def nu_gamma_PM_conditions(nu, gamma, PM_order) -> bool:
     """
     Function to check values of nu, gamma and PM_order
@@ -160,6 +230,3 @@ def nu_gamma_PM_conditions(nu, gamma, PM_order) -> bool:
         error = 1
 
     return bool(error)
-
-
-print(critical_rescaled_angular_momentum_PM(0.25, 1.0912579072, 1))
