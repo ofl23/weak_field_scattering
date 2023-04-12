@@ -3,7 +3,7 @@ import argparse
 
 
 
-def scattering_angle_PM(m1, m2, E, J, PM_order=4):
+def scattering_angle_PM(m1, m2, E, J, PM_order=3):
     """
     Function to return the scattering angle at a given PM order
     Formula from arXiv:2211.01399v2 (2.4)
@@ -29,7 +29,7 @@ def scattering_angle_PM(m1, m2, E, J, PM_order=4):
     return 2 * angle
 
 
-def scattering_angle_PM_scL_resum(m1, m2, E, J, PM_order=4):
+def scattering_angle_PM_scL_resum(m1, m2, E, J, PM_order=3):
     """
     Function to return the scL resummed scattering angle at a given PM order
     Formula from arXiv:2211.01399v2 (4.5)
@@ -55,6 +55,43 @@ def scattering_angle_PM_scL_resum(m1, m2, E, J, PM_order=4):
         print(angle)
 
     return 2 * scL(critical_rescaled_angular_momentum_PM(nu, gamma, PM_order) / j) * angle
+
+
+
+def scattering_angle_PM_EOB(m1, m2, E, J, PM_order=2):
+    """
+    Function to return the EOB scattering angle at a given PM order
+    Formulae from arXiv:2211.01399v2 (3.12) - (3.15)
+
+    m1, m2 = black hole masses 
+    E = centre of mass total energy
+    J = centre of mass angular momentum
+    """
+    
+    M = m1 + m2                                         # Sum of masses
+    nu = m1*m2 * pow(M,-2)                               # Symmetric mass ratio
+
+    gamma = 1 + (-1 + pow(E,2)/pow(M,2))/(2.*nu)        # Relative Lorentz factor
+    j = J/(m1*m2)                                       # rescaled angular momentum
+
+    if nu_gamma_PM_conditions(nu, gamma, PM_order):
+        return 0
+
+    if PM_order == 1:
+        return 2 * np.arctan(w_potential_PM(nu, gamma, 1) / (2*j* np.sqrt(pow(gamma,2)-1)))
+
+    if PM_order == 2:
+        w_1 = w_potential_PM(nu, gamma, 1)
+        w_2 = w_potential_PM(nu, gamma, 2)
+
+        sqrt_factor = np.sqrt(pow(w_1,2) - 4*pInf*(pow(gamma,2)-1)*(w_2 - pow(j,2)))
+        angle = 4*j*np.arctan(np.sqrt((sqrt_factor+w_1)/(sqrt_factor-w_1))) / np.sqrt(pow(j,2)-w_2)
+
+        return angle - np.pi/4
+    
+    if PM_order > 2:
+        print('Error: Above 2PM not currently implemented in scattering_angle_PM_EOB')
+        return 0
 
 
 
@@ -128,7 +165,7 @@ def scattering_angle_PM_contribution_scL_resum(nu, gamma, PM_contribution_order,
 
 
 
-def w_potential_PM(nu, gamma, PM_order=4):
+def w_potential_PM(nu, gamma, PM_order):
     """
     Function to return the w potential at a given PM order
     Formulae from arXiv:2211.01399v2 (2.36)
