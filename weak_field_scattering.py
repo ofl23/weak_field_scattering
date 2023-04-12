@@ -84,10 +84,10 @@ def scattering_angle_PM_EOB(m1, m2, E, J, PM_order=2):
         w_1 = w_potential_PM(nu, gamma, 1)
         w_2 = w_potential_PM(nu, gamma, 2)
 
-        sqrt_factor = np.sqrt(pow(w_1,2) - 4*pInf*(pow(gamma,2)-1)*(w_2 - pow(j,2)))
+        sqrt_factor = np.sqrt(pow(w_1,2) - 4*(pow(gamma,2)-1)*(w_2 - pow(j,2)))
         angle = 4*j*np.arctan(np.sqrt((sqrt_factor+w_1)/(sqrt_factor-w_1))) / np.sqrt(pow(j,2)-w_2)
 
-        return angle - np.pi/4
+        return angle - np.pi
     
     if PM_order > 2:
         print('Error: Above 2PM not currently implemented in scattering_angle_PM_EOB')
